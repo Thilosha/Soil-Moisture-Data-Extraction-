@@ -1,1 +1,25 @@
-git clone https://earthengine.googlesource.com/users/thiloshanipunajith/SMAP-data-extraction
+var countries = ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017');
+var roi = countries.filter(ee.Filter.eq('country_na','Sri Lanka'));
+Map.addLayer(roi, {}, 'Sri Lanka', false);
+Map.centerObject(roi);
+
+var dataset = ee.ImageCollection('NASA_USDA/HSL/SMAP10KM_soil_moisture')
+                  .filter(ee.Filter.date('2022-01-01', '2022-12-30'));
+                  //.filterBounds(roi);
+var soilMoisture = dataset.select('ssm').mean();;
+var soilMoistureVis = {
+  min: 0.0,
+  max: 28.0,
+  palette: ['0300ff', '418504', 'efff07', 'efff07', 'ff0303'],
+};
+Map.addLayer(soilMoisture, soilMoistureVis, 'Global Soil Moisture');
+Map.addLayer(soilMoisture.clip(roi), soilMoistureVis, 'Sri Lanka Soil Moisture');
+Map.centerObject(roi,6);
+
+Export.image.toDrive({
+  image: soilMoisture.clip(roi),
+  description: 'SMAP_Sri Lanka',
+  scale: 1000,
+  region: roi,
+  maxPixels: 1e13
+});
